@@ -30,6 +30,10 @@ A modern, animated website for the itsBonked memecoin project built with vanilla
 
 To view the website, simply open the `index.html` file in your browser.
 
+## Demo
+
+Check out the live demo: [itsBonked Demo](https://wolfdev12.github.io/bonked/)
+
 ## Dependencies
 
 - [Animate.css](https://animate.style/) - For element animations (loaded via CDN)

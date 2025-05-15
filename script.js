@@ -1,247 +1,236 @@
-// Wait for DOM content to be fully loaded
 document.addEventListener('DOMContentLoaded', function() {
-    
-    // Add scroll animation to elements
-    const animateOnScroll = () => {
-        const elements = document.querySelectorAll('.feature-card, .step, .about-content, .tokenomics-card');
+    // Features Scroll Functionality
+    const initializeScroll = () => {
+        const scrollContainer = document.querySelector('.features-scroll');
+        const leftButton = document.querySelector('.scroll-left');
+        const rightButton = document.querySelector('.scroll-right');
         
-        elements.forEach(element => {
-            const elementPosition = element.getBoundingClientRect().top;
-            const screenPosition = window.innerHeight;
+        if (scrollContainer && leftButton && rightButton) {
+            const scrollAmount = 370; // card width (350px) + gap (20px)
             
-            if (elementPosition < screenPosition - 100) {
-                if (!element.classList.contains('animate__animated')) {
-                    element.classList.add('animate__animated', 'animate__fadeIn');
+            // Left scroll
+            leftButton.addEventListener('click', () => {
+                scrollContainer.scrollBy({
+                    left: -scrollAmount,
+                    behavior: 'smooth'
+                });
+            });
+            
+            // Right scroll
+            rightButton.addEventListener('click', () => {
+                scrollContainer.scrollBy({
+                    left: scrollAmount,
+                    behavior: 'smooth'
+                });
+            });
+            
+            // Update button visibility
+            const updateScrollButtons = () => {
+                const isAtStart = scrollContainer.scrollLeft <= 0;
+                const isAtEnd = scrollContainer.scrollLeft >= (scrollContainer.scrollWidth - scrollContainer.clientWidth);
+                
+                leftButton.style.opacity = isAtStart ? '0' : '1';
+                leftButton.style.pointerEvents = isAtStart ? 'none' : 'auto';
+                
+                rightButton.style.opacity = isAtEnd ? '0' : '1';
+                rightButton.style.pointerEvents = isAtEnd ? 'none' : 'auto';
+            };
+            
+            // Listen for scroll and resize events
+            scrollContainer.addEventListener('scroll', updateScrollButtons);
+            window.addEventListener('resize', updateScrollButtons);
+            updateScrollButtons(); // Initial check
+            
+            // Add touch scroll for mobile
+            let isDown = false;
+            let startX;
+            let scrollLeft;
+            
+            scrollContainer.addEventListener('mousedown', (e) => {
+                isDown = true;
+                scrollContainer.style.cursor = 'grabbing';
+                startX = e.pageX - scrollContainer.offsetLeft;
+                scrollLeft = scrollContainer.scrollLeft;
+            });
+            
+            scrollContainer.addEventListener('mouseleave', () => {
+                isDown = false;
+                scrollContainer.style.cursor = 'grab';
+            });
+            
+            scrollContainer.addEventListener('mouseup', () => {
+                isDown = false;
+                scrollContainer.style.cursor = 'grab';
+            });
+            
+            scrollContainer.addEventListener('mousemove', (e) => {
+                if (!isDown) return;
+                e.preventDefault();
+                const x = e.pageX - scrollContainer.offsetLeft;
+                const walk = (x - startX) * 2;
+                scrollContainer.scrollLeft = scrollLeft - walk;
+            });
+        }
+    };
+    
+    // Copy Button Functionality
+    const initializeCopyButtons = () => {
+        // Generic copy buttons
+        const copyButtons = document.querySelectorAll('.copy-button');
+        copyButtons.forEach(button => {
+            button.addEventListener('click', async () => {
+                const content = button.previousElementSibling.textContent;
+                copyToClipboard(content, button);
+            });
+        });
+        
+        // Specific copy buttons
+        const specificCopyButtons = document.querySelectorAll('.copy-btn');
+        specificCopyButtons.forEach(button => {
+            button.addEventListener('click', async () => {
+                const container = button.closest('.address-container');
+                if (container) {
+                    const textElement = container.querySelector('.token-value.address');
+                    if (textElement) {
+                        const content = textElement.textContent;
+                        copyToClipboard(content, button);
+                    }
                 }
-            }
+            });
         });
     };
     
-    // Initial check for elements in view on page load
-    animateOnScroll();
+    // Helper function for copying to clipboard
+    const copyToClipboard = async (text, button) => {
+        try {
+            // Try the modern Clipboard API first
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(text);
+            } else {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                textArea.style.position = 'fixed';
+                textArea.style.opacity = 0;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+            }
+            
+            // Visual feedback
+            const originalText = button.textContent;
+            button.textContent = 'Copied!';
+            button.classList.add('copied');
+            
+            setTimeout(() => {
+                button.textContent = originalText;
+                button.classList.remove('copied');
+            }, 2000);
+        } catch (err) {
+            console.error('Failed to copy:', err);
+            button.textContent = 'Error';
+            
+            setTimeout(() => {
+                button.textContent = originalText || 'Copy';
+                button.classList.remove('copied');
+            }, 2000);
+        }
+    };
     
-    // Listen for scroll events
-    window.addEventListener('scroll', animateOnScroll);
-    
-    // Make ticker animation responsive
-    const tickerContent = document.querySelector('.ticker-content');
-    if (tickerContent) {
-        const tickerItems = tickerContent.querySelectorAll('span');
-        const clonedItems = Array.from(tickerItems).map(item => item.cloneNode(true));
+    // Smooth Scroll Navigation
+    const initializeSmoothScroll = () => {
+        const navLinks = document.querySelectorAll('nav a');
         
-        clonedItems.forEach(item => {
-            tickerContent.appendChild(item);
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = link.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                
+                if (targetElement) {
+                    targetElement.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
         });
-    }
+    };
     
-    // Smooth scrolling for navigation links
-    const navLinks = document.querySelectorAll('nav a');
+    // Animation on Scroll
+    const initializeScrollAnimation = () => {
+        const elements = document.querySelectorAll('.feature-card, .step, .about-content, .tokenomics-card');
+        
+        const animateOnScroll = () => {
+            elements.forEach(element => {
+                const elementTop = element.getBoundingClientRect().top;
+                const elementBottom = element.getBoundingClientRect().bottom;
+                
+                if (elementTop < window.innerHeight - 100 && elementBottom > 0) {
+                    element.classList.add('animate__animated', 'animate__fadeIn');
+                }
+            });
+        };
+        
+        window.addEventListener('scroll', animateOnScroll);
+        animateOnScroll(); // Initial check
+    };    // Initialize all functionality
+    initializeScroll();
+    initializeCopyButtons();
+    initializeSmoothScroll();
+    initializeScrollAnimation();
+    initializeTicker();
     
-    navLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            const targetId = this.getAttribute('href');
-            const targetElement = document.querySelector(targetId);
-            
-            if (targetElement) {
-                window.scrollTo({
-                    top: targetElement.offsetTop - 80,
-                    behavior: 'smooth'
-                });
+    // Setup copy functionality for tokenomics address
+    document.querySelectorAll('.copy-btn').forEach(btn => {
+        btn.innerHTML = '<span class="copy-text">Copy</span><span class="copied-text">Copied!</span>';
+        
+        btn.addEventListener('click', function() {
+            const addressContainer = this.closest('.address-container');
+            if (addressContainer) {
+                const address = addressContainer.querySelector('.token-value.address').textContent;
+                copyToClipboard(address, this);
             }
         });
     });
-    
-    // Create a floating mascot that follows mouse movement
-    const createFloatingMascot = () => {
-        const mascotImages = ['mascot1.png', 'mascot3.png', 'mascot7.png', 'mascot9.png'];
-        const randomIndex = Math.floor(Math.random() * mascotImages.length);
-        const mascotImage = mascotImages[randomIndex];
+      // Initialize ticker with proper cloning for infinite scroll
+    function initializeTicker() {
+        const tickerContent = document.getElementById('ticker');
+        if (!tickerContent) return;
         
-        const floatingMascot = document.createElement('div');
-        floatingMascot.classList.add('floating-mascot', 'animate__animated', 'animate__fadeIn');
-        floatingMascot.innerHTML = `<img src="assets/${mascotImage}" alt="Floating Mascot">`;
-        
-        document.body.appendChild(floatingMascot);
-        
-        setTimeout(() => {
-            floatingMascot.classList.remove('animate__fadeIn');
-            floatingMascot.classList.add('animate__fadeOut');
-            
-            setTimeout(() => {
-                document.body.removeChild(floatingMascot);
-            }, 1000);
-        }, 5000);
-        
-        return floatingMascot;
-    };
-    
-    // Occasionally show a floating mascot
-    const showRandomMascot = () => {
-        if (Math.random() > 0.7) {
-            const mascot = createFloatingMascot();
-            const maxX = window.innerWidth - 100;
-            const maxY = window.innerHeight - 100;
-            
-            const randomX = Math.floor(Math.random() * maxX);
-            const randomY = Math.floor(Math.random() * maxY);
-            
-            mascot.style.left = `${randomX}px`;
-            mascot.style.top = `${randomY}px`;
-        }
-    };
-    
-    // Show mascot every 10 seconds
-    setInterval(showRandomMascot, 10000);
-    
-    // Button pulse effect
-    const addButtonEffects = () => {
-        const buttons = document.querySelectorAll('.btn');
-        
-        buttons.forEach(button => {
-            button.addEventListener('mouseover', function() {
-                this.classList.add('animate__animated', 'animate__pulse');
-            });
-            
-            button.addEventListener('mouseout', function() {
-                this.classList.remove('animate__animated', 'animate__pulse');
-            });
-        });
-    };
-    
-    addButtonEffects();
-    
-    // Add style for the floating mascot
-    const style = document.createElement('style');
-    style.textContent = `
-        .floating-mascot {
-            position: fixed;
-            z-index: 999;
-            width: 80px;
-            height: 80px;
-            pointer-events: none;
-        }
-        
-        .floating-mascot img {
-            width: 100%;
-            height: 100%;
-        }
-    `;
-    document.head.appendChild(style);
-    
-    // Mobile menu toggle for responsive design
-    const createMobileMenu = () => {
-        const header = document.querySelector('header');
-        const nav = document.querySelector('nav');
-        
-        const mobileMenuToggle = document.createElement('div');
-        mobileMenuToggle.classList.add('mobile-menu-toggle');
-        mobileMenuToggle.innerHTML = `<span></span><span></span><span></span>`;
-        
-        header.insertBefore(mobileMenuToggle, nav);
-        
-        mobileMenuToggle.addEventListener('click', function() {
-            this.classList.toggle('active');
-            nav.classList.toggle('active');
+        // Clone the content to create a seamless loop
+        const originalElements = Array.from(tickerContent.children);
+        originalElements.forEach(element => {
+            const clone = element.cloneNode(true);
+            tickerContent.appendChild(clone);
         });
         
-        // Add mobile menu styles
-        const mobileStyle = document.createElement('style');
-        mobileStyle.textContent = `
-            .mobile-menu-toggle {
-                display: none;
-                flex-direction: column;
-                justify-content: space-between;
-                width: 30px;
-                height: 20px;
-                cursor: pointer;
+        // Adjust animation speed based on content width
+        const tickerWidth = tickerContent.scrollWidth / 2;
+        const animationDuration = Math.max(15, tickerWidth / 50); // Ensure minimum speed
+        
+        // Apply animation dynamically
+        const animationName = 'ticker-scroll';
+        const styleSheet = document.createElement('style');
+        styleSheet.innerHTML = `
+            @keyframes ${animationName} {
+                0% { transform: translateX(0); }
+                100% { transform: translateX(-${tickerWidth}px); }
             }
-            
-            .mobile-menu-toggle span {
-                display: block;
-                height: 3px;
-                width: 100%;
-                background-color: var(--text);
-                border-radius: 3px;
-                transition: all 0.3s ease;
-            }
-            
-            .mobile-menu-toggle.active span:nth-child(1) {
-                transform: translateY(8px) rotate(45deg);
-            }
-            
-            .mobile-menu-toggle.active span:nth-child(2) {
-                opacity: 0;
-            }
-            
-            .mobile-menu-toggle.active span:nth-child(3) {
-                transform: translateY(-8px) rotate(-45deg);
-            }
-            
-            @media (max-width: 768px) {
-                .mobile-menu-toggle {
-                    display: flex;
-                }
-                
-                nav {
-                    display: none;
-                    width: 100%;
-                }
-                
-                nav.active {
-                    display: block;
-                }
-                
-                nav ul {
-                    flex-direction: column;
-                    align-items: center;
-                }
-                
-                nav ul li {
-                    margin: 10px 0;
-                }
+            #ticker {
+                animation: ${animationName} ${animationDuration}s linear infinite;
             }
         `;
-        document.head.appendChild(mobileStyle);
-    };
-    
-    // Call mobile menu creation
-    createMobileMenu();
-    
-    // Add coin counter animation in tokenomics section
-    const animateCounter = () => {
-        const tokenValue = document.querySelector('.token-value:not(.address)');
-        if (!tokenValue) return;
+        document.head.appendChild(styleSheet);
         
-        const finalValue = parseInt(tokenValue.textContent.replace(/,/g, ''));
-        let currentValue = 0;
-        const increment = finalValue / 100;
-        
-        tokenValue.textContent = '0';
-        
-        const observer = new IntersectionObserver(entries => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const interval = setInterval(() => {
-                        currentValue += increment;
-                        
-                        if (currentValue >= finalValue) {
-                            currentValue = finalValue;
-                            clearInterval(interval);
-                        }
-                        
-                        tokenValue.textContent = Math.floor(currentValue).toLocaleString();
-                    }, 10);
-                    
-                    observer.disconnect();
-                }
-            });
+        // Check if we need to pause animation on hover
+        tickerContent.addEventListener('mouseenter', () => {
+            tickerContent.style.animationPlayState = 'paused';
         });
         
-        observer.observe(tokenValue);
-    };
-    
-    // Initialize counter animation
-    animateCounter();
-}); 
+        tickerContent.addEventListener('mouseleave', () => {
+            tickerContent.style.animationPlayState = 'running';
+        });
+    }
+});
